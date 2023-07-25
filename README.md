@@ -13,3 +13,10 @@ import jxl_oxide
 
 img = Image.open("image.jxl")
 ```
+
+## Build
+
+```bash
+maturin build -r
+pip install {path to wheel}
+```
