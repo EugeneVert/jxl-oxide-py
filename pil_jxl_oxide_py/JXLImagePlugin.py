@@ -15,39 +15,45 @@ def _accept(data):
 class JxlImageFile(ImageFile.ImageFile):
     format = "Jxl"
     format_description = "Jpeg XL image"
+    __loaded = False
 
     def _open(self):
         self.fc = self.fp.read()
 
         self._decoder = jxl_oxide_py.lib.new(self.fc, len(self.fc))  # type: ignore
 
-        self._size = (self._decoder.width, self._decoder.height)
+        self._size = (
+            jxl_oxide_py.lib.width(self._decoder),  # type: ignore
+            jxl_oxide_py.lib.height(self._decoder),  # type: ignore
+        )
 
         self.rawmode = jxl_oxide_py.ffi.string(
-            jxl_oxide_py.lib.pil_colorspace(self._decoder), 8  # type: ignore
+            jxl_oxide_py.lib.colorspace(self._decoder), 8  # type: ignore
         ).decode()  # type: ignore
         self.mode = self.rawmode
 
-        self.data = jxl_oxide_py.ffi.buffer(
-            self._decoder.image, self._decoder.image_len
-        )
-
-        self.tile = [("raw", (0, 0) + self.size, 0, self.rawmode)]
+        self.tile = []
 
     def load(self):
-        if self.data is None:
-            EOFError("no more frames")
+        if not self.__loaded:
+            self._image = jxl_oxide_py.lib.image(self._decoder)  # type: ignore
+            self.data = jxl_oxide_py.ffi.buffer(self._image.data, self._image.len)
 
-        if self.fp:
-            self.fp.close()
+            self.__loaded = True
 
-        self.fp = BytesIO(self.data)  # type: ignore
+            if self.fp and self._exclusive_fp:  # type: ignore
+                self.fp.close()
+
+            self.fp = BytesIO(self.data)  # type: ignore
+            self.tile = [("raw", (0, 0) + self.size, 0, self.rawmode)]
 
         return super().load()
 
-    def __del__(self):
-        print("DROP")
-        jxl_oxide_py.lib.free(self._decoder)  # type: ignore
+    def close(self):
+        jxl_oxide_py.lib.free_jxl_oxide(self._decoder)  # type: ignore
+        if self.__loaded:
+            jxl_oxide_py.lib.free_array(self._image)  # type: ignore
+        super().close()
 
 
 Image.register_open(JxlImageFile.format, JxlImageFile, _accept)  # type: ignore

@@ -2,23 +2,19 @@
 
 use std::{error::Error, io::Cursor, mem::forget, ptr::null_mut};
 
-use jxl_oxide::JxlImage;
+use jxl_oxide::{JxlImage, PixelFormat};
 
-#[repr(C)]
 pub struct JxlOxidePy {
-    pub image: *mut u8,
-    pub image_len: usize,
+    pub keyframe: jxl_oxide::Render,
     pub width: u32,
     pub height: u32,
-    pub pixfmt: PixelFormat,
+    pub pixfmt: jxl_oxide::PixelFormat,
 }
 
 #[repr(C)]
-pub enum PixelFormat {
-    Gray,
-    Graya,
-    Rgb,
-    Rgba,
+pub struct Array {
+    data: *mut u8,
+    len: usize,
 }
 
 #[no_mangle]
@@ -32,8 +28,17 @@ pub unsafe extern "C" fn new(val: *const u8, n: usize) -> *mut JxlOxidePy {
 }
 
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub unsafe extern "C" fn pil_colorspace(ptr: *mut JxlOxidePy) -> *const u8 {
+pub unsafe extern "C" fn width(ptr: *mut JxlOxidePy) -> u32 {
+    (*ptr).width
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn height(ptr: *mut JxlOxidePy) -> u32 {
+    (*ptr).height
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn colorspace(ptr: *mut JxlOxidePy) -> *const u8 {
     if ptr.is_null() {
         return null_mut();
     }
@@ -43,18 +48,50 @@ pub unsafe extern "C" fn pil_colorspace(ptr: *mut JxlOxidePy) -> *const u8 {
         PixelFormat::Graya => "LA\0",
         PixelFormat::Rgb => "RGB\0",
         PixelFormat::Rgba => "RGBA\0",
+        PixelFormat::Cmyk => todo!(),
+        PixelFormat::Cmyka => todo!(),
     };
     res.as_ptr()
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn free(ptr: *mut JxlOxidePy) {
+pub unsafe extern "C" fn image(ptr: *mut JxlOxidePy) -> *mut Array {
+    if ptr.is_null() {
+        return null_mut();
+    }
+    let d = &*ptr;
+    let fb = d.keyframe.image();
+    let mut buf = vec![0u8; fb.width() * fb.height() * fb.channels()];
+    for (b, s) in buf.iter_mut().zip(fb.buf()) {
+        *b = (*s * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
+    }
+    let res = Array {
+        data: buf.as_mut_ptr(),
+        len: buf.len(),
+    };
+    forget(buf);
+    Box::into_raw(Box::new(res))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn free_jxl_oxide(ptr: *mut JxlOxidePy) {
     if ptr.is_null() {
         return;
     }
     unsafe {
-        let d: Box<JxlOxidePy> = Box::from_raw(ptr);
-        drop(Vec::from_raw_parts(d.image, d.image_len, d.image_len));
+        let _: Box<JxlOxidePy> = Box::from_raw(ptr);
+        // drop(Vec::from_raw_parts(d.image, d.image_len, d.image_len));
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn free_array(ptr: *mut Array) {
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let array: Box<Array> = Box::from_raw(ptr);
+        drop(Vec::from_raw_parts(array.data, array.len, array.len));
     }
 }
 
@@ -65,7 +102,7 @@ fn read_jxl(bytes: &[u8]) -> Result<JxlOxidePy, Box<dyn Error + Send + Sync>> {
     let size = &image.image_header().size;
     let width = size.width;
     let height = size.height;
-    
+
     let mut renderer = image.renderer();
     let pixfmt = renderer.pixel_format();
 
@@ -75,35 +112,13 @@ fn read_jxl(bytes: &[u8]) -> Result<JxlOxidePy, Box<dyn Error + Send + Sync>> {
         _ => return Err("Unexpected end of JXL file".into()),
     };
 
-    let fb = keyframe.image();
-    let mut buf = vec![0u8; fb.width() * fb.height() * fb.channels()];
-    for (b, s) in buf.iter_mut().zip(fb.buf()) {
-        *b = (*s * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
-    }
-
     let decoded = JxlOxidePy {
-        image: buf.as_mut_ptr(),
-        image_len: buf.len(),
+        keyframe,
         width,
         height,
-        pixfmt: PixelFormat::from(pixfmt),
+        pixfmt,
     };
-
-    forget(buf);
 
     println!("Return");
     Ok(decoded)
-}
-
-impl From<jxl_oxide::PixelFormat> for PixelFormat {
-    fn from(value: jxl_oxide::PixelFormat) -> Self {
-        match value {
-            jxl_oxide::PixelFormat::Gray => Self::Gray,
-            jxl_oxide::PixelFormat::Graya => Self::Graya,
-            jxl_oxide::PixelFormat::Rgb => Self::Rgb,
-            jxl_oxide::PixelFormat::Rgba => Self::Rgba,
-            jxl_oxide::PixelFormat::Cmyk => todo!(),
-            jxl_oxide::PixelFormat::Cmyka => todo!(),
-        }
-    }
 }
