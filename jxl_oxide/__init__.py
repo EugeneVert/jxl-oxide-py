@@ -1,7 +1,7 @@
 from PIL import Image, ImageFile
 from io import BytesIO
 
-from .jxl_oxide_py import lib, ffi
+from ._internal import lib, ffi
 
 
 def _accept(data):
