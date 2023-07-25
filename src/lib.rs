@@ -1,11 +1,13 @@
 #![allow(clippy::missing_safety_doc)]
 
+// TODO: Error handling, safery docs
+
 use std::{error::Error, io::Cursor, mem::forget, ptr::null_mut};
 
 use jxl_oxide::{JxlImage, PixelFormat};
 
-pub struct JxlOxidePy {
-    pub keyframe: jxl_oxide::Render,
+pub struct JxlOxide<'a> {
+    pub image: JxlImage<Cursor<&'a [u8]>>,
     pub width: u32,
     pub height: u32,
     pub pixfmt: jxl_oxide::PixelFormat,
@@ -18,7 +20,7 @@ pub struct Array {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn new(val: *const u8, n: usize) -> *mut JxlOxidePy {
+pub unsafe extern "C" fn new(val: *const u8, n: usize) -> *mut JxlOxide<'static> {
     let slice = unsafe { std::slice::from_raw_parts(val, n) };
     let Ok(decoded) = read_jxl(slice) else {
         return null_mut();
@@ -28,17 +30,17 @@ pub unsafe extern "C" fn new(val: *const u8, n: usize) -> *mut JxlOxidePy {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn width(ptr: *mut JxlOxidePy) -> u32 {
+pub unsafe extern "C" fn width(ptr: *mut JxlOxide) -> u32 {
     (*ptr).width
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn height(ptr: *mut JxlOxidePy) -> u32 {
+pub unsafe extern "C" fn height(ptr: *mut JxlOxide) -> u32 {
     (*ptr).height
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn colorspace(ptr: *mut JxlOxidePy) -> *const u8 {
+pub unsafe extern "C" fn colorspace(ptr: *mut JxlOxide) -> *const u8 {
     if ptr.is_null() {
         return null_mut();
     }
@@ -55,12 +57,16 @@ pub unsafe extern "C" fn colorspace(ptr: *mut JxlOxidePy) -> *const u8 {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn image(ptr: *mut JxlOxidePy) -> *mut Array {
+pub unsafe extern "C" fn image(ptr: *mut JxlOxide) -> *mut Array {
     if ptr.is_null() {
         return null_mut();
     }
-    let d = &*ptr;
-    let fb = d.keyframe.image();
+    let d = &mut *ptr;
+    let mut renderer = d.image.renderer();
+    let jxl_oxide::RenderResult::Done(keyframe) = renderer.render_next_frame().unwrap() else {
+        return null_mut();
+    };
+    let fb = keyframe.image();
     let mut buf = vec![0u8; fb.width() * fb.height() * fb.channels()];
     for (b, s) in buf.iter_mut().zip(fb.buf()) {
         *b = (*s * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
@@ -74,12 +80,12 @@ pub unsafe extern "C" fn image(ptr: *mut JxlOxidePy) -> *mut Array {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn free_jxl_oxide(ptr: *mut JxlOxidePy) {
+pub unsafe extern "C" fn free_jxl_oxide(ptr: *mut JxlOxide) {
     if ptr.is_null() {
         return;
     }
     unsafe {
-        let _: Box<JxlOxidePy> = Box::from_raw(ptr);
+        let _: Box<JxlOxide> = Box::from_raw(ptr);
         // drop(Vec::from_raw_parts(d.image, d.image_len, d.image_len));
     }
 }
@@ -95,7 +101,7 @@ pub unsafe extern "C" fn free_array(ptr: *mut Array) {
     }
 }
 
-fn read_jxl(bytes: &[u8]) -> Result<JxlOxidePy, Box<dyn Error + Send + Sync>> {
+fn read_jxl(bytes: &[u8]) -> Result<JxlOxide, Box<dyn Error + Send + Sync>> {
     let cursor = Cursor::new(bytes);
     println!("Start decoding");
     let mut image = JxlImage::from_reader(cursor)?;
@@ -103,17 +109,11 @@ fn read_jxl(bytes: &[u8]) -> Result<JxlOxidePy, Box<dyn Error + Send + Sync>> {
     let width = size.width;
     let height = size.height;
 
-    let mut renderer = image.renderer();
+    let renderer = image.renderer();
     let pixfmt = renderer.pixel_format();
 
-    let result = renderer.render_next_frame()?;
-    let keyframe = match result {
-        jxl_oxide::RenderResult::Done(frame) => frame,
-        _ => return Err("Unexpected end of JXL file".into()),
-    };
-
-    let decoded = JxlOxidePy {
-        keyframe,
+    let decoded = JxlOxide {
+        image,
         width,
         height,
         pixfmt,

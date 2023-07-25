@@ -20,42 +20,42 @@ class JxlImageFile(ImageFile.ImageFile):
     def _open(self):
         self.fc = self.fp.read()
 
-        self._decoder = jxl_oxide_py.lib.new(self.fc, len(self.fc))  # type: ignore
+        self._decoder = jxl_oxide_py.lib.new(self.fc, len(self.fc))
 
         self._size = (
-            jxl_oxide_py.lib.width(self._decoder),  # type: ignore
-            jxl_oxide_py.lib.height(self._decoder),  # type: ignore
+            jxl_oxide_py.lib.width(self._decoder),
+            jxl_oxide_py.lib.height(self._decoder),
         )
 
         self.rawmode = jxl_oxide_py.ffi.string(
-            jxl_oxide_py.lib.colorspace(self._decoder), 8  # type: ignore
-        ).decode()  # type: ignore
+            jxl_oxide_py.lib.colorspace(self._decoder), 8
+        ).decode()
         self.mode = self.rawmode
 
         self.tile = []
 
     def load(self):
         if not self.__loaded:
-            self._image = jxl_oxide_py.lib.image(self._decoder)  # type: ignore
+            self._image = jxl_oxide_py.lib.image(self._decoder)
             self.data = jxl_oxide_py.ffi.buffer(self._image.data, self._image.len)
 
             self.__loaded = True
 
-            if self.fp and self._exclusive_fp:  # type: ignore
+            if self.fp and self._exclusive_fp:
                 self.fp.close()
 
-            self.fp = BytesIO(self.data)  # type: ignore
+            self.fp = BytesIO(self.data)
             self.tile = [("raw", (0, 0) + self.size, 0, self.rawmode)]
 
         return super().load()
 
     def close(self):
-        jxl_oxide_py.lib.free_jxl_oxide(self._decoder)  # type: ignore
+        jxl_oxide_py.lib.free_jxl_oxide(self._decoder)
         if self.__loaded:
-            jxl_oxide_py.lib.free_array(self._image)  # type: ignore
+            jxl_oxide_py.lib.free_array(self._image)
         super().close()
 
 
-Image.register_open(JxlImageFile.format, JxlImageFile, _accept)  # type: ignore
-Image.register_extension(JxlImageFile.format, ".jxl")  # type: ignore
-Image.register_mime(JxlImageFile.format, "image/jxl")  # type: ignore
+Image.register_open(JxlImageFile.format, JxlImageFile, _accept)
+Image.register_extension(JxlImageFile.format, ".jxl")
+Image.register_mime(JxlImageFile.format, "image/jxl")
