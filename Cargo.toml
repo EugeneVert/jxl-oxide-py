@@ -1,0 +1,12 @@
+[package]
+name = "jxl-oxide-py"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "jxl_oxide_py"
+crate-type = ["cdylib"]
+
+[dependencies]
+jxl-oxide = "0.3.0"
