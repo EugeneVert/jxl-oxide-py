@@ -23,7 +23,7 @@ pub struct Array {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn new(val: *const u8, n: usize) -> *mut JxlOxide<'static> {
+pub unsafe extern "C" fn new<'a>(val: *const u8, n: usize) -> *mut JxlOxide<'a> {
     let slice = unsafe { std::slice::from_raw_parts(val, n) };
     let Ok(decoded) = read_jxl(slice) else {
         return null_mut();
