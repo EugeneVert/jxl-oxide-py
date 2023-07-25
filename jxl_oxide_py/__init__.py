@@ -1,8 +1,7 @@
 from PIL import Image, ImageFile
 from io import BytesIO
-import jxl_oxide_py
 
-_VALID_JXL_MODES = {"RGB", "RGBA", "L", "LA"}
+from .jxl_oxide_py import lib, ffi
 
 
 def _accept(data):
@@ -20,24 +19,22 @@ class JxlImageFile(ImageFile.ImageFile):
     def _open(self):
         self.fc = self.fp.read()
 
-        self._decoder = jxl_oxide_py.lib.new(self.fc, len(self.fc))
+        self._decoder = lib.new(self.fc, len(self.fc))
 
         self._size = (
-            jxl_oxide_py.lib.width(self._decoder),
-            jxl_oxide_py.lib.height(self._decoder),
+            lib.width(self._decoder),
+            lib.height(self._decoder),
         )
 
-        self.rawmode = jxl_oxide_py.ffi.string(
-            jxl_oxide_py.lib.colorspace(self._decoder), 8
-        ).decode()
+        self.rawmode = ffi.string(lib.colorspace(self._decoder), 8).decode()
         self.mode = self.rawmode
 
         self.tile = []
 
     def load(self):
         if not self.__loaded:
-            self._image = jxl_oxide_py.lib.image(self._decoder)
-            self.data = jxl_oxide_py.ffi.buffer(self._image.data, self._image.len)
+            self._image = lib.image(self._decoder)
+            self.data = ffi.buffer(self._image.data, self._image.len)
 
             self.__loaded = True
 
@@ -50,9 +47,9 @@ class JxlImageFile(ImageFile.ImageFile):
         return super().load()
 
     def close(self):
-        jxl_oxide_py.lib.free_jxl_oxide(self._decoder)
+        lib.free_jxl_oxide(self._decoder)
         if self.__loaded:
-            jxl_oxide_py.lib.free_array(self._image)
+            lib.free_array(self._image)
         super().close()
 
 
