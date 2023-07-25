@@ -10,3 +10,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 jxl-oxide = "0.3.0"
+
+[profile.release]
+codegen-units = 1
+opt-level = 3
+strip = true
+lto = true
