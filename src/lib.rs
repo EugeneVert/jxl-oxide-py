@@ -1,6 +1,9 @@
 #![allow(clippy::missing_safety_doc)]
 
-// TODO: Error handling, safery docs
+// # TODO
+// * Error handling
+// * Safery docs?
+// * Handle bitdepths >8
 
 use std::{error::Error, io::Cursor, mem::forget, ptr::null_mut};
 
