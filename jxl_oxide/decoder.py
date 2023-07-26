@@ -19,21 +19,25 @@ class JxlOxideDecoder:
         return ffi.string(lib.colorspace(self._decoder), 8).decode()
 
     def image(self):
-        self._image = self.wrap(lib.image)
+        self._image = self.wrapper(lib.image)
         return ffi.buffer(self._image.data, self._image.len)
+
+    # -------------------------------------------------------------------------
+
+    def wrapper(self, func) -> Any:
+        """Wrapper for handling errors"""
+        res = func(self._decoder)
+        if res == ffi.NULL:
+            raise_error()
 
     def __del__(self):
         lib.free_jxl_oxide(self._decoder)
         if self._image:
             lib.free_array(self._image)
 
-    def wrap(self, func) -> Any:
-        res = func(self._decoder)
-        if res == ffi.NULL:
-            raise_error()
-
 
 def raise_error():
+    """Raises ValueError with message recived from ffi"""
     buf_len = lib.last_error_length()
     buf = b"\0" * buf_len
     lib.last_error_message(buf, buf_len)
