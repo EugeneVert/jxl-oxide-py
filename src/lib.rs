@@ -1,8 +1,10 @@
 #![allow(clippy::missing_safety_doc)]
 
+mod errors;
+pub use errors::*;
+
 // # TODO
-// * Error handling
-// * Safery docs?
+// * Safety docs
 // * Handle bitdepths >8
 
 use std::{error::Error, io::Cursor, mem::forget, ptr::null_mut};
@@ -25,10 +27,13 @@ pub struct Array {
 #[no_mangle]
 pub unsafe extern "C" fn new<'a>(val: *const u8, n: usize) -> *mut JxlOxide<'a> {
     let slice = unsafe { std::slice::from_raw_parts(val, n) };
-    let Ok(decoded) = read_jxl(slice) else {
-        return null_mut();
+    let decoded = match read_jxl(slice) {
+        Ok(v) => v,
+        Err(e) => {
+            update_last_error(e);
+            return null_mut();
+        }
     };
-
     Box::into_raw(Box::new(decoded))
 }
 
@@ -44,9 +49,6 @@ pub unsafe extern "C" fn height(ptr: *mut JxlOxide) -> u32 {
 
 #[no_mangle]
 pub unsafe extern "C" fn colorspace(ptr: *mut JxlOxide) -> *const u8 {
-    if ptr.is_null() {
-        return null_mut();
-    }
     let d = &*ptr;
     let res = match d.pixfmt {
         PixelFormat::Gray => "L\0",
@@ -61,14 +63,25 @@ pub unsafe extern "C" fn colorspace(ptr: *mut JxlOxide) -> *const u8 {
 
 #[no_mangle]
 pub unsafe extern "C" fn image(ptr: *mut JxlOxide) -> *mut Array {
-    if ptr.is_null() {
-        return null_mut();
-    }
     let d = &mut *ptr;
     let mut renderer = d.image.renderer();
-    let jxl_oxide::RenderResult::Done(keyframe) = renderer.render_next_frame().unwrap() else {
-        return null_mut();
+
+    let keyframe = match renderer.render_next_frame() {
+        Ok(jxl_oxide::RenderResult::Done(keyframe)) => keyframe,
+        Ok(jxl_oxide::RenderResult::NeedMoreData) => {
+            update_last_error(String::from("NeedMoreData").into());
+            return null_mut();
+        }
+        Ok(jxl_oxide::RenderResult::NoMoreFrames) => {
+            update_last_error(String::from("NoMoreFrames").into());
+            return null_mut();
+        }
+        Err(e) => {
+            update_last_error(e);
+            return null_mut();
+        }
     };
+
     let fb = keyframe.image();
     let mut buf = vec![0u8; fb.width() * fb.height() * fb.channels()];
     for (b, s) in buf.iter_mut().zip(fb.buf()) {
@@ -89,7 +102,6 @@ pub unsafe extern "C" fn free_jxl_oxide(ptr: *mut JxlOxide) {
     }
     unsafe {
         let _: Box<JxlOxide> = Box::from_raw(ptr);
-        // drop(Vec::from_raw_parts(d.image, d.image_len, d.image_len));
     }
 }
 
@@ -104,7 +116,7 @@ pub unsafe extern "C" fn free_array(ptr: *mut Array) {
     }
 }
 
-fn read_jxl(bytes: &[u8]) -> Result<JxlOxide, Box<dyn Error + Send + Sync>> {
+fn read_jxl(bytes: &[u8]) -> Result<JxlOxide, Box<dyn Error + Send + Sync + 'static>> {
     let cursor = Cursor::new(bytes);
     println!("Start decoding");
     let mut image = JxlImage::from_reader(cursor)?;
