@@ -26,7 +26,7 @@ pub struct Array {
 
 #[no_mangle]
 pub unsafe extern "C" fn new<'a>(val: *const u8, n: usize) -> *mut JxlOxide<'a> {
-    let slice = unsafe { std::slice::from_raw_parts(val, n) };
+    let slice = std::slice::from_raw_parts(val, n);
     let decoded = match read_jxl(slice) {
         Ok(v) => v,
         Err(e) => {
@@ -100,9 +100,7 @@ pub unsafe extern "C" fn free_jxl_oxide(ptr: *mut JxlOxide) {
     if ptr.is_null() {
         return;
     }
-    unsafe {
-        let _: Box<JxlOxide> = Box::from_raw(ptr);
-    }
+    let _: Box<JxlOxide> = Box::from_raw(ptr);
 }
 
 #[no_mangle]
@@ -110,10 +108,8 @@ pub unsafe extern "C" fn free_array(ptr: *mut Array) {
     if ptr.is_null() {
         return;
     }
-    unsafe {
-        let array: Box<Array> = Box::from_raw(ptr);
-        drop(Vec::from_raw_parts(array.data, array.len, array.len));
-    }
+    let array: Box<Array> = Box::from_raw(ptr);
+    drop(Vec::from_raw_parts(array.data, array.len, array.len));
 }
 
 fn read_jxl(bytes: &[u8]) -> Result<JxlOxide, Box<dyn Error + Send + Sync + 'static>> {
