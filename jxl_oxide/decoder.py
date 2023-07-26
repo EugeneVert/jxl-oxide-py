@@ -29,6 +29,7 @@ class JxlOxideDecoder:
         res = func(self._decoder)
         if res == ffi.NULL:
             raise_error()
+        return res
 
     def __del__(self):
         lib.free_jxl_oxide(self._decoder)

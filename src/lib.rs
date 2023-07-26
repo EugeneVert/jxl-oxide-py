@@ -118,7 +118,6 @@ pub unsafe extern "C" fn free_array(ptr: *mut Array) {
 
 fn read_jxl(bytes: &[u8]) -> Result<JxlOxide, Box<dyn Error + Send + Sync + 'static>> {
     let cursor = Cursor::new(bytes);
-    println!("Start decoding");
     let mut image = JxlImage::from_reader(cursor)?;
     let size = &image.image_header().size;
     let width = size.width;
@@ -134,6 +133,5 @@ fn read_jxl(bytes: &[u8]) -> Result<JxlOxide, Box<dyn Error + Send + Sync + 'sta
         pixfmt,
     };
 
-    println!("Return");
     Ok(decoded)
 }
