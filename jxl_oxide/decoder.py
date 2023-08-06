@@ -16,7 +16,10 @@ class JxlOxideDecoder:
         )
 
     def colorspace(self) -> str:
-        return ffi.string(lib.colorspace(self._decoder), 8).decode()
+        colorspace = lib.colorspace(self._decoder)
+        if colorspace == ffi.NULL:
+            raise NotImplementedError
+        return ffi.string(colorspace, 8).decode()
 
     def image(self):
         self._image = self.wrapper(lib.image)

@@ -54,8 +54,8 @@ pub unsafe extern "C" fn colorspace(ptr: *mut JxlOxide) -> *const u8 {
         PixelFormat::Graya => "LA\0",
         PixelFormat::Rgb => "RGB\0",
         PixelFormat::Rgba => "RGBA\0",
-        PixelFormat::Cmyk => todo!(),
-        PixelFormat::Cmyka => todo!(),
+        PixelFormat::Cmyk => "CMYK\0",
+        PixelFormat::Cmyka => return ptr::null(),
     };
     res.as_ptr()
 }
