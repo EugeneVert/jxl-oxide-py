@@ -62,8 +62,7 @@ pub unsafe extern "C" fn colorspace(ptr: *mut JxlOxide) -> *const u8 {
 
 #[no_mangle]
 pub unsafe extern "C" fn image(ptr: *mut JxlOxide) -> *mut Array {
-    let mut renderer = (*ptr).image.renderer();
-    let keyframe = match renderer.render_next_frame() {
+    let keyframe = match (*ptr).image.render_next_frame() {
         Ok(jxl_oxide::RenderResult::Done(keyframe)) => keyframe,
         Ok(jxl_oxide::RenderResult::NeedMoreData) => {
             update_last_error(String::from("NeedMoreData").into());
@@ -116,13 +115,12 @@ pub unsafe extern "C" fn free_array(ptr: *mut Array) {
 
 fn read_jxl(bytes: &[u8]) -> Result<JxlOxide, Box<dyn Error + Send + Sync + 'static>> {
     let cursor = Cursor::new(bytes);
-    let mut image = JxlImage::from_reader(cursor)?;
+    let image = JxlImage::from_reader(cursor)?;
     let size = &image.image_header().size;
     let width = size.width;
     let height = size.height;
 
-    let renderer = image.renderer();
-    let pixfmt = renderer.pixel_format();
+    let pixfmt = image.pixel_format();
 
     let decoded = JxlOxide {
         image,
