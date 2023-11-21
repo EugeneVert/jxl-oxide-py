@@ -9,10 +9,10 @@ pub use errors::*;
 
 use std::{error::Error, io::Cursor, mem::forget, ptr};
 
-use jxl_oxide::{JxlImage, PixelFormat};
+use jxl_oxide::{JxlImage, JxlThreadPool, PixelFormat};
 
-pub struct JxlOxide<'a> {
-    pub image: JxlImage<Cursor<&'a [u8]>>,
+pub struct JxlOxide {
+    pub image: JxlImage,
     pub width: u32,
     pub height: u32,
     pub pixfmt: jxl_oxide::PixelFormat,
@@ -25,7 +25,7 @@ pub struct Array {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn new<'a>(val: *const u8, n: usize) -> *mut JxlOxide<'a> {
+pub unsafe extern "C" fn new(val: *const u8, n: usize) -> *mut JxlOxide {
     let slice = std::slice::from_raw_parts(val, n);
     let decoded = match read_jxl(slice) {
         Ok(v) => v,
@@ -62,23 +62,14 @@ pub unsafe extern "C" fn colorspace(ptr: *mut JxlOxide) -> *const u8 {
 
 #[no_mangle]
 pub unsafe extern "C" fn image(ptr: *mut JxlOxide) -> *mut Array {
-    let keyframe = match (*ptr).image.render_next_frame() {
-        Ok(jxl_oxide::RenderResult::Done(keyframe)) => keyframe,
-        Ok(jxl_oxide::RenderResult::NeedMoreData) => {
-            update_last_error(String::from("NeedMoreData").into());
-            return ptr::null_mut();
-        }
-        Ok(jxl_oxide::RenderResult::NoMoreFrames) => {
-            update_last_error(String::from("NoMoreFrames").into());
-            return ptr::null_mut();
-        }
+    let fb = match (*ptr).image.render_frame(0) {
+        Ok(render) => render.image(),
         Err(e) => {
             update_last_error(e);
             return ptr::null_mut();
         }
     };
 
-    let fb = keyframe.image();
     let mut buf = vec![0u8; fb.width() * fb.height() * fb.channels()];
     for (b, s) in buf.iter_mut().zip(fb.buf()) {
         *b = (*s * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
@@ -115,7 +106,8 @@ pub unsafe extern "C" fn free_array(ptr: *mut Array) {
 
 fn read_jxl(bytes: &[u8]) -> Result<JxlOxide, Box<dyn Error + Send + Sync + 'static>> {
     let cursor = Cursor::new(bytes);
-    let image = JxlImage::from_reader(cursor)?;
+    let pool = JxlThreadPool::rayon(None);
+    let image = JxlImage::from_reader_with_threads(cursor, pool)?;
     let size = &image.image_header().size;
     let width = size.width;
     let height = size.height;
