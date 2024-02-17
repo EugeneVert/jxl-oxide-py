@@ -107,7 +107,7 @@ pub unsafe extern "C" fn free_array(ptr: *mut Array) {
 fn read_jxl(bytes: &[u8]) -> Result<JxlOxide, Box<dyn Error + Send + Sync + 'static>> {
     let cursor = Cursor::new(bytes);
     let pool = JxlThreadPool::rayon(None);
-    let image = JxlImage::from_reader_with_threads(cursor, pool)?;
+    let image = JxlImage::builder().pool(pool).read(cursor)?;
     let size = &image.image_header().size;
     let width = size.width;
     let height = size.height;

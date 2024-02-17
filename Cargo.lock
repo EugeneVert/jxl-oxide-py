@@ -3,61 +3,41 @@
 version = 3
 
 [[package]]
-name = "autocfg"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
-
-[[package]]
-name = "cfg-if"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
 name = "crossbeam-deque"
-version = "0.8.3"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce6fd6f855243022dcecf8702fef0c297d4338e226845fe067f6341ad9fa0cef"
+checksum = "613f8cc01fe9cf1a3eb3d7f488fd2fa8388403e97039e2f73692932e291a770d"
 dependencies = [
- "cfg-if",
  "crossbeam-epoch",
  "crossbeam-utils",
 ]
 
 [[package]]
 name = "crossbeam-epoch"
-version = "0.9.15"
+version = "0.9.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae211234986c545741a7dc064309f67ee1e5ad243d0e48335adc0484d960bcc7"
+checksum = "5b82ac4a3c2ca9c3460964f020e1402edd5753411d7737aa39c3714ad1b5420e"
 dependencies = [
- "autocfg",
- "cfg-if",
  "crossbeam-utils",
- "memoffset",
- "scopeguard",
 ]
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.16"
+version = "0.8.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a22b2d63d4d1dc0b7f1b6b2747dd0088008a9be28b6ddf0b1e7d335e3037294"
-dependencies = [
- "cfg-if",
-]
+checksum = "248e3bacc7dc6baa3b21e405ee045c3047101a49145e7e9eca583ab4c2ca5345"
 
 [[package]]
 name = "either"
-version = "1.9.0"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
+checksum = "11157ac094ffbdde99aa67b23417ebdd801842852b500e395a45a9c0aac03e4a"
 
 [[package]]
 name = "jxl-bitstream"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32ae9d8f3dfbef298b8357a283fad85da9c59027229e28beafcfc9d2a810a398"
+checksum = "9f38d3c6ae8012e380ff73d5c9265d7a60acc618821d0fb40545c02735223762"
 dependencies = [
  "tracing",
 ]
@@ -73,20 +53,22 @@ dependencies = [
 
 [[package]]
 name = "jxl-color"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "320b54db472711efc56c8b257207b91772277e926b21e686cb23d10daf2c7f8f"
+checksum = "3eaa098ef84ea4f31fe4f2d93c8737fc9c88d3f3bee18334e3a78aa6b5c0e738"
 dependencies = [
  "jxl-bitstream",
  "jxl-coding",
  "jxl-grid",
+ "jxl-threadpool",
+ "tracing",
 ]
 
 [[package]]
 name = "jxl-frame"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "694f9d1d3f6addabf74ad9ca664ef0e760e85a66558dc348d03137a7adda620c"
+checksum = "54f386640d4e9e63e876c941191000c49bc6ddef7d719c176fd7d0c735839c02"
 dependencies = [
  "jxl-bitstream",
  "jxl-coding",
@@ -100,15 +82,18 @@ dependencies = [
 
 [[package]]
 name = "jxl-grid"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f93164539f6339d98341835684b5c8458dafd9a5dfb2fdbd3c821ea00f58a86d"
+checksum = "f4a85129ecf79ca5f6a37ae291b67195a3021b2e445194745728be1b5bf667bf"
+dependencies = [
+ "tracing",
+]
 
 [[package]]
 name = "jxl-image"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c33911f1240386e4d0f874b313a4d27b68c5f67d4a7a418990b6605543c08a39"
+checksum = "35ae2850f735f9794bfc7ee58ae8178e16a6dc7d08cc3f245820d6c37b9bd5bb"
 dependencies = [
  "jxl-bitstream",
  "jxl-color",
@@ -118,9 +103,9 @@ dependencies = [
 
 [[package]]
 name = "jxl-modular"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3aa0fd75ed9e7101c1dcf7172ccac722705f6e75cc0b44721154765846a2d70"
+checksum = "f955512f2921af085d8e55df35cd733ec1e7deeea05a5c3b056d4d0b2b82f70e"
 dependencies = [
  "jxl-bitstream",
  "jxl-coding",
@@ -131,9 +116,9 @@ dependencies = [
 
 [[package]]
 name = "jxl-oxide"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e986fe957d42be34043ed5b089c34c35a182524509e6cfee87d86527f61f9623"
+checksum = "ec1bb65f27171804ad8e8710477fd592eec6d369d8cd7951f5179edbfe4c5cb4"
 dependencies = [
  "jxl-bitstream",
  "jxl-color",
@@ -147,16 +132,16 @@ dependencies = [
 
 [[package]]
 name = "jxl-oxide-python"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "jxl-oxide",
 ]
 
 [[package]]
 name = "jxl-render"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b862f98f83049febe65feb40d75493638386721ff5dff4c6a5ad267035881bf"
+checksum = "c8b2eddafe85e2b2ef6730526cb5acee02847c0efaa8f54356fe9fd70bc45392"
 dependencies = [
  "jxl-bitstream",
  "jxl-coding",
@@ -183,9 +168,9 @@ dependencies = [
 
 [[package]]
 name = "jxl-vardct"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "027bacaccf80849dfa4513354c8c41e8e4e1a112efeb682f6b3e9aeb4b4db481"
+checksum = "81a3af6c6cbe9de190dc441a687b3b5d08bed4368428516f5bcd793fc5955184"
 dependencies = [
  "jxl-bitstream",
  "jxl-coding",
@@ -196,19 +181,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "memoffset"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a634b1c61a95585bd15607c6ab0c4e5b226e695ff2800ba0cdccddf208c406c"
-dependencies = [
- "autocfg",
-]
-
-[[package]]
 name = "once_cell"
-version = "1.18.0"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
+checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
 name = "pin-project-lite"
@@ -218,9 +194,9 @@ checksum = "8afb450f006bf6385ca15ef45d71d2288452bc3683ce2e2cacc0d18e4be60b58"
 
 [[package]]
 name = "rayon"
-version = "1.8.0"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c27db03db7734835b3f53954b534c91069375ce6ccaa2e065441e07d9b6cdb1"
+checksum = "fa7237101a77a10773db45d62004a272517633fbcc3df19d96455ede1122e051"
 dependencies = [
  "either",
  "rayon-core",
@@ -228,36 +204,29 @@ dependencies = [
 
 [[package]]
 name = "rayon-core"
-version = "1.12.0"
+version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ce3fb6ad83f861aac485e76e1985cd109d9a3713802152be56c3b1f0e0658ed"
+checksum = "1465873a3dfdaa8ae7cb14b4383657caab0b3e8a0aa9ae8e04b044854c8dfce2"
 dependencies = [
  "crossbeam-deque",
  "crossbeam-utils",
 ]
 
 [[package]]
-name = "scopeguard"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
-
-[[package]]
 name = "tracing"
-version = "0.1.37"
+version = "0.1.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ce8c33a8d48bd45d624a6e523445fd21ec13d3653cd51f681abf67418f54eb8"
+checksum = "c3523ab5a71916ccf420eebdf5521fcef02141234bbc0b8a49f2fdc4544364ef"
 dependencies = [
- "cfg-if",
  "pin-project-lite",
  "tracing-core",
 ]
 
 [[package]]
 name = "tracing-core"
-version = "0.1.31"
+version = "0.1.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0955b8137a1df6f1a2e9a37d8a6656291ff0297c1a97c24e0d8425fe2312f79a"
+checksum = "c06d3da6113f116aaee68e4d601191614c9053067f9ab7f6edbcb161237daa54"
 dependencies = [
  "once_cell",
 ]
